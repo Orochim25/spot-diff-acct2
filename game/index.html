@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Harbour at Dusk — Spot the Difference</title>
+<style>
+  :root {
+    --navy: #0c1230;
+    --navy2: #141b3d;
+    --panel: #182052;
+    --gold: #ffd166;
+    --gold-dim: #c9a24a;
+    --teal: #7fe0c3;
+    --green: #3ddc84;
+    --red: #ff5c5c;
+    --ink: #f2ead8;
+    --muted: #9aa3c7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--navy);
+    color: var(--ink);
+    font-family: "Trebuchet MS", Verdana, sans-serif;
+  }
+  #app { max-width: 1320px; margin: 0 auto; padding: 10px 16px 20px; }
+  header.top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 6px 2px 2px;
+  }
+  header.top h1 {
+    margin: 0; font-family: Georgia, serif; font-size: 30px; letter-spacing: 1px;
+    color: var(--gold);
+  }
+  header.top h1 small {
+    display: block; font-family: "Trebuchet MS", sans-serif; font-size: 13px;
+    letter-spacing: 4px; color: var(--muted); text-transform: uppercase;
+  }
+  #best-chip {
+    font-size: 13px; color: var(--gold); border: 1px solid var(--gold-dim);
+    border-radius: 20px; padding: 5px 12px; white-space: nowrap;
+  }
+  #hud {
+    display: flex; gap: 10px; align-items: stretch; margin: 10px 0;
+  }
+  .counter {
+    background: var(--panel); border: 2px solid var(--gold);
+    border-radius: 12px; padding: 4px 18px; text-align: center; min-width: 150px;
+  }
+  .counter b { display: block; font-size: 44px; line-height: 1; color: var(--gold); }
+  .counter span { font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+  #found-dots { align-self: center; font-size: 13px; color: var(--muted); }
+  #found-dots .dot {
+    display: inline-block; width: 13px; height: 13px; border-radius: 50%;
+    border: 2px solid var(--gold-dim); margin: 0 2px; vertical-align: middle;
+  }
+  #found-dots .dot.on { background: var(--gold); border-color: var(--gold); }
+  #found-dots .found-word { margin-left: 8px; }
+  .stat {
+    background: var(--panel); border-radius: 12px; padding: 6px 14px;
+    text-align: center; min-width: 86px;
+  }
+  .stat small { display: block; font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+  .stat b { font-size: 22px; color: var(--ink); }
+  #strikes { color: var(--red); letter-spacing: 2px; }
+  .btns { display: flex; gap: 8px; margin-left: auto; align-items: center; flex-wrap: wrap; }
+  button {
+    font-family: inherit; font-size: 14px; cursor: pointer;
+    background: var(--panel); color: var(--ink);
+    border: 1px solid var(--gold-dim); border-radius: 9px; padding: 8px 12px;
+  }
+  button:hover { border-color: var(--gold); color: var(--gold); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button.primary {
+    background: var(--gold); color: #20180a; border-color: var(--gold);
+    font-weight: bold; padding: 12px 26px; font-size: 16px;
+  }
+  #scenebar {
+    display: flex; gap: 10px; align-items: center; margin: 4px 0 10px;
+  }
+  #scene-name { font-family: Georgia, serif; font-size: 19px; color: var(--gold); }
+  #scene-tag { font-size: 13px; color: var(--muted); }
+  #scene-dots { margin-left: auto; }
+  #scene-dots .sdot {
+    display: inline-block; width: 26px; height: 26px; line-height: 26px; text-align: center;
+    border-radius: 50%; border: 2px solid var(--gold-dim); color: var(--muted);
+    margin-left: 6px; font-size: 13px;
+  }
+  #scene-dots .sdot.now { border-color: var(--gold); color: var(--gold); }
+  #scene-dots .sdot.done { background: var(--gold); border-color: var(--gold); color: #20180a; }
+  #progressbar {
+    flex: 1; height: 10px; background: var(--panel); border-radius: 6px; overflow: hidden;
+  }
+  #progress-fill { height: 100%; width: 0%; background: var(--gold); }
+  #progress-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  #stage { display: flex; gap: 14px; align-items: stretch; }
+  .panel { flex: 1; min-width: 0; }
+  .panel .tag {
+    display: flex; justify-content: space-between; font-size: 12px;
+    letter-spacing: 3px; color: var(--muted); text-transform: uppercase; padding: 0 2px 6px;
+  }
+  .panel .tag b { color: var(--gold); }
+  canvas.game {
+    width: 100%; height: auto; display: block; border-radius: 10px;
+    border: 2px solid #2a3468; background: #0a0f28; cursor: crosshair;
+  }
+  #vs {
+    align-self: center; flex: 0 0 54px; height: 54px; line-height: 54px; text-align: center;
+    border-radius: 50%; background: var(--gold); color: #20180a;
+    font-weight: bold; font-size: 20px; font-family: Georgia, serif;
+  }
+  footer.keys { margin-top: 12px; font-size: 12px; color: var(--muted); text-align: center; }
+  footer.keys b { color: var(--ink); }
+  .overlay {
+    position: fixed; inset: 0; background: rgba(6, 9, 26, 0.86);
+    display: none; align-items: center; justify-content: center; z-index: 20;
+  }
+  .overlay.show { display: flex; }
+  .card {
+    background: var(--navy2); border: 2px solid var(--gold); border-radius: 16px;
+    padding: 26px 34px; max-width: 620px; text-align: center;
+  }
+  .card h2 { margin: 0 0 8px; font-family: Georgia, serif; color: var(--gold); font-size: 28px; }
+  .card p { margin: 8px 0; line-height: 1.55; font-size: 15px; }
+  .card p.big { font-size: 20px; color: var(--gold); font-family: Georgia, serif; }
+  .card .rules { text-align: left; font-size: 14px; }
+  .card .rules li { margin: 5px 0; }
+  #lens {
+    position: fixed; width: 150px; height: 150px; border-radius: 50%;
+    overflow: hidden; border: 3px solid var(--gold); display: none;
+    pointer-events: none; z-index: 15; box-shadow: 0 0 24px rgba(0,0,0,0.6);
+  }
+  #lens.show { display: block; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <h1>Harbour at Dusk<small>Spot the Difference</small></h1>
+    <span id="best-chip">No best yet — set one tonight</span>
+  </header>
+
+  <div id="hud">
+    <div class="counter"><b id="counter-num">7</b><span id="counter-label">to find</span></div>
+    <div id="found-dots"><span class="found-word">Found:</span></div>
+    <div class="stat"><small>Time</small><b id="timer">00:00</b></div>
+    <div class="stat"><small>Score</small><b id="score">0</b></div>
+    <div class="stat"><small>Streak</small><b id="streak">x1</b></div>
+    <div class="stat"><small>Strikes</small><b id="strikes">···</b></div>
+    <div class="btns">
+      <button id="btn-hint" type="button">💡 Hint (<span id="hints-left">3</span>)</button>
+      <button id="btn-pause" type="button">⏸ Pause</button>
+      <button id="btn-sound" type="button">🔊 Sound</button>
+      <button id="btn-magnifier" type="button">🔍 Lens on</button>
+      <button id="btn-help" type="button">? How to play</button>
+      <button id="btn-restart" type="button">↺ Restart</button>
+    </div>
+  </div>
+
+  <div id="scenebar">
+    <span id="scene-name">The Dusk Pier</span>
+    <span id="scene-tag">Scene 1 of 4 — par 01:30</span>
+    <div id="progressbar"><div id="progress-fill"></div></div>
+    <span id="progress-label">0 / 28 found</span>
+    <span id="scene-dots"></span>
+  </div>
+
+  <div id="stage">
+    <div class="panel">
+      <div class="tag"><span>◀ Original</span><b>Look closely</b></div>
+      <canvas id="canvas-left" class="game" width="640" height="420"></canvas>
+    </div>
+    <div id="vs">VS</div>
+    <div class="panel">
+      <div class="tag"><b>Spot the changes</b><span>Changed ▶</span></div>
+      <canvas id="canvas-right" class="game" width="640" height="420"></canvas>
+    </div>
+  </div>
+
+  <footer class="keys">
+    Click a difference on either picture — a gold ring marks it on both (the newest glows green).
+    Keys: <b>← ↑ ↓ →</b> move crosshair · <b>Enter</b> guess · <b>H</b> hint · <b>P</b> pause ·
+    <b>N</b> next · <b>R</b> restart · <b>M</b> mute. Three wrong clicks fail the scene.
+  </footer>
+</div>
+
+<div id="lens"><canvas id="lens-canvas" width="150" height="150"></canvas></div>
+
+<div class="overlay show" id="overlay-howto">
+  <div class="card">
+    <h2>Harbour at Dusk</h2>
+    <p>Four dusk scenes on the old harbour. Each pair of pictures hides
+    <b>7 differences</b> — something removed, recoloured, moved, resized,
+    flipped or added. Find them all before the strikes run out.</p>
+    <ul class="rules">
+      <li>Click a difference on <b>either</b> picture; it rings gold on both.</li>
+      <li>Three wrong clicks and the scene fails — retry it.</li>
+      <li><b>Hint</b> pulses a difference you missed (3 per scene).</li>
+      <li>Beat the par time for a bonus. Streaks pay extra.</li>
+      <li>Hover a picture for the magnifier lens; arrows + Enter play by keyboard.</li>
+    </ul>
+    <p><button class="primary" id="btn-start" type="button">Start the hunt →</button></p>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-scene">
+  <div class="card">
+    <h2>Scene cleared</h2>
+    <div id="scene-summary"></div>
+    <p><button class="primary" id="btn-next" type="button">Next scene →</button></p>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-fail">
+  <div class="card">
+    <h2>Three strikes</h2>
+    <p id="fail-summary"></p>
+    <p><button class="primary" id="btn-retry" type="button">Retry this scene</button></p>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-win">
+  <div class="card">
+    <h2>The harbour is yours</h2>
+    <div id="win-stats"></div>
+    <p><button class="primary" id="btn-again" type="button">Play again ↺</button></p>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-pause">
+  <div class="card">
+    <h2>Paused</h2>
+    <p>The harbour waits. The timer is stopped.</p>
+    <p><button class="primary" id="btn-resume" type="button">Resume</button></p>
+  </div>
+</div>
+
+<script src="src/scenes.js"></script>
+<script src="src/art.js"></script>
+<script src="src/audio.js"></script>
+<script src="src/game.js"></script>
+</body>
+</html>
